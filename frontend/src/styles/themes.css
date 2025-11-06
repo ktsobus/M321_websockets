@@ -1,0 +1,39 @@
+:root {
+  /* Primary accent color */
+  --color-primary: #676cff;
+  --color-primary-light: rgba(103, 108, 255, 0.2);
+  --color-primary-dark: rgba(29, 3, 129, 0.2);
+
+  /* Background colors */
+  --color-bg-dark: #171d22;
+  --color-bg-semi-transparent: rgba(23, 29, 34, 0.85);
+  --color-bg-transparent: rgba(23, 29, 34, 0.8);
+
+  /* Text colors */
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #676cff;
+  --color-text-muted: rgba(255, 255, 255, 0.5);
+
+  /* Border colors */
+  --color-border-primary: rgba(166, 103, 255, 0.3);
+  --color-border-light: rgba(204, 103, 255, 0.3);
+
+  /* Message colors */
+  --color-message-other: rgba(255, 255, 255, 0.1);
+  --color-message-own: rgba(103, 108, 255, 0.2);
+  --color-message-border: rgba(255, 255, 255, 0.3);
+  --color-message-own-border: #676cff;
+
+  /* Button colors */
+  --color-button-bg: rgba(133, 103, 255, 0.11);
+  --color-button-hover-bg: rgba(29, 3, 129, 0.2);
+  --color-button-border: #676cff;
+
+  /* Leave button (danger) */
+  --color-leave-bg: rgba(255, 103, 103, 0.1);
+  --color-leave-hover-bg: rgba(255, 103, 103, 0.2);
+  --color-leave-border: rgba(255, 103, 103, 0.5);
+  --color-leave-hover-border: rgba(255, 103, 103, 0.8);
+  --color-leave-text: rgba(255, 103, 103, 0.9);
+  --color-leave-hover-text: rgba(255, 103, 103, 1);
+}
