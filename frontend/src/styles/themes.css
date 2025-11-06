@@ -1,4 +1,8 @@
 :root {
+  /* Typography */
+  --font-title: 'Titan One', sans-serif;
+  --font-body: 'Nunito', sans-serif;
+
   /* Primary accent color */
   --color-primary: #676cff;
   --color-primary-light: rgba(103, 108, 255, 0.2);

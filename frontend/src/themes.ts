@@ -66,8 +66,8 @@ export const themes: Record<string, Theme> = {
       textSecondary: '#676cff',
       textMuted: 'rgba(255, 255, 255, 0.5)',
 
-      borderPrimary: 'rgba(166, 103, 255, 0.3)',
-      borderLight: 'rgba(204, 103, 255, 0.3)',
+      borderPrimary: 'rgba(118, 37, 231, 0.55)',
+      borderLight: 'rgba(104, 22, 211, 0.58)',
 
       messageOther: 'rgba(255, 255, 255, 0.1)',
       messageOwn: 'rgba(103, 108, 255, 0.2)',

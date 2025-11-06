@@ -242,7 +242,7 @@ const leaveChat = () => {
 .container {
   max-width: 400px;
   margin: 40px auto;
-  font-family: sans-serif;
+  font-family: var(--font-body);
   text-align: center;
   position: relative;
   z-index: 1;
@@ -250,11 +250,19 @@ const leaveChat = () => {
 
 h1 {
   color: var(--color-text-primary);
+  font-family: var(--font-title);
 }
 
 h2 {
   color: var(--color-text-secondary);
   font-size: 1.2rem;
+  font-family: var(--font-title);
+  font-weight: 100;
+}
+
+h3 {
+  font-family: var(--font-title);
+  font-weight: 100;
 }
 
 .name-prompt {
@@ -265,6 +273,7 @@ h2 {
   font-weight: bold;
   margin-bottom: 10px;
   color: var(--color-text-secondary);
+  font-family: var(--font-body);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -290,6 +299,7 @@ h2 {
   border: 1px solid var(--color-border-light);
   border-radius: 4px;
   color: var(--color-text-primary);
+  font-family: var(--font-body);
   outline: none;
 }
 
@@ -308,6 +318,7 @@ h2 {
   border: 1px solid var(--color-button-border);
   border-radius: 4px;
   color: var(--color-button-border);
+  font-family: var(--font-body);
   cursor: pointer;
 }
 
@@ -321,6 +332,7 @@ h2 {
   border: 1px solid var(--color-leave-border);
   border-radius: 4px;
   color: var(--color-leave-text);
+  font-family: var(--font-body);
   cursor: pointer;
   font-size: 0.9rem;
 }
@@ -338,6 +350,7 @@ h2 {
   padding: 4px 8px;
   border-radius: 4px;
   border-left: 3px solid var(--color-message-border);
+  font-family: var(--font-body);
 }
 
 .message-own {
@@ -347,6 +360,7 @@ h2 {
   padding: 4px 8px;
   border-radius: 4px;
   border-left: 3px solid var(--color-message-own-border);
+  font-family: var(--font-body);
 }
 
 .system-message {
@@ -355,6 +369,7 @@ h2 {
   font-style: italic;
   text-align: center;
   opacity: 0.8;
+  font-family: var(--font-body);
 }
 
 /* Theme Indicator Button */
@@ -367,6 +382,7 @@ h2 {
   border: 1px solid var(--color-border-primary);
   border-radius: 4px;
   color: var(--color-text-secondary);
+  font-family: var(--font-body);
   font-size: 0.85rem;
   cursor: pointer;
   backdrop-filter: blur(10px);
@@ -426,6 +442,7 @@ h2 {
   border: 1px solid var(--color-border-light);
   border-radius: 8px;
   color: var(--color-text-primary);
+  font-family: var(--font-body);
   cursor: pointer;
   transition: all 0.2s;
   font-size: 1rem;
