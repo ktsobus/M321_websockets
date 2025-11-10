@@ -56,6 +56,52 @@ export function getRecentMessages(limit: number = 100): Array<{
   return messages.reverse();
 }
 
+/**
+ * Get messages before a specific message ID (for pagination)
+ * @param beforeId - Get messages with ID less than this
+ * @param limit - Maximum number of messages to retrieve
+ * @returns Object with messages array and hasMore flag
+ */
+export function getMessagesBeforeId(
+  beforeId: number,
+  limit: number = 50
+): {
+  messages: Array<{
+    id: number;
+    username: string;
+    text: string;
+    timestamp: number;
+  }>;
+  hasMore: boolean;
+} {
+  // Get the requested messages
+  const stmt = db.prepare(
+    "SELECT id, username, text, timestamp FROM messages WHERE id < ? ORDER BY id DESC LIMIT ?"
+  );
+
+  const messages = stmt.all(beforeId, limit) as Array<{
+    id: number;
+    username: string;
+    text: string;
+    timestamp: number;
+  }>;
+
+  // Check if there are more messages before the oldest one we just retrieved
+  let hasMore = false;
+  if (messages.length > 0) {
+    const oldestId = messages[messages.length - 1].id;
+    const checkStmt = db.prepare("SELECT COUNT(*) as count FROM messages WHERE id < ?");
+    const result = checkStmt.get(oldestId) as { count: number };
+    hasMore = result.count > 0;
+  }
+
+  // Reverse to get chronological order (oldest first)
+  return {
+    messages: messages.reverse(),
+    hasMore,
+  };
+}
+
 // Close database when process exits
 process.on("SIGINT", () => {
   db.close();

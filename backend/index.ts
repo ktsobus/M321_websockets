@@ -1,5 +1,5 @@
 import { WebSocketServer } from "ws";
-import { saveMessage, getRecentMessages } from "./db";
+import { saveMessage, getRecentMessages, getMessagesBeforeId } from "./db";
 
 const wss = new WebSocketServer({ port: 9000 });
 console.log("✅ WebSocket server running on ws://localhost:9000");
@@ -48,6 +48,18 @@ wss.on("connection", (ws) => {
           client.send(messageData);
         }
       });
+    } else if (data.type === 'load_more') {
+      // Handle pagination request
+      const beforeId = data.beforeId;
+      const result = getMessagesBeforeId(beforeId, 50);
+
+      const response = JSON.stringify({
+        type: 'more_history',
+        messages: result.messages,
+        hasMore: result.hasMore
+      });
+
+      ws.send(response);
     }
   });
 
