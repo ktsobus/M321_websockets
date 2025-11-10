@@ -9,9 +9,32 @@ db.run(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL,
     text TEXT NOT NULL,
-    timestamp INTEGER NOT NULL
+    timestamp INTEGER NOT NULL,
+    image TEXT,
+    imageType TEXT
   )
 `);
+
+// Migration: Add image and imageType columns if they don't exist
+try {
+  db.run("ALTER TABLE messages ADD COLUMN image TEXT");
+  console.log("✅ Added 'image' column to messages table");
+} catch (error: any) {
+  // Column already exists, ignore duplicate column error
+  if (!error.message.includes("duplicate column")) {
+    throw error;
+  }
+}
+
+try {
+  db.run("ALTER TABLE messages ADD COLUMN imageType TEXT");
+  console.log("✅ Added 'imageType' column to messages table");
+} catch (error: any) {
+  // Column already exists, ignore duplicate column error
+  if (!error.message.includes("duplicate column")) {
+    throw error;
+  }
+}
 
 console.log("✅ Database initialized");
 
@@ -19,15 +42,22 @@ console.log("✅ Database initialized");
  * Save a new message to the database
  * @param username - The user who sent the message
  * @param text - The message content
+ * @param image - Optional base64 image data
+ * @param imageType - Optional image MIME type
  */
-export function saveMessage(username: string, text: string): void {
+export function saveMessage(
+  username: string,
+  text: string,
+  image?: string,
+  imageType?: string
+): void {
   const timestamp = Date.now(); // Current time in milliseconds
 
   const stmt = db.prepare(
-    "INSERT INTO messages (username, text, timestamp) VALUES (?, ?, ?)"
+    "INSERT INTO messages (username, text, timestamp, image, imageType) VALUES (?, ?, ?, ?, ?)"
   );
 
-  stmt.run(username, text, timestamp);
+  stmt.run(username, text, timestamp, image || null, imageType || null);
 }
 
 /**
@@ -40,9 +70,11 @@ export function getRecentMessages(limit: number = 100): Array<{
   username: string;
   text: string;
   timestamp: number;
+  image: string | null;
+  imageType: string | null;
 }> {
   const stmt = db.prepare(
-    "SELECT id, username, text, timestamp FROM messages ORDER BY timestamp DESC LIMIT ?"
+    "SELECT id, username, text, timestamp, image, imageType FROM messages ORDER BY timestamp DESC LIMIT ?"
   );
 
   const messages = stmt.all(limit) as Array<{
@@ -50,6 +82,8 @@ export function getRecentMessages(limit: number = 100): Array<{
     username: string;
     text: string;
     timestamp: number;
+    image: string | null;
+    imageType: string | null;
   }>;
 
   // Reverse to get chronological order (oldest first)
@@ -71,12 +105,14 @@ export function getMessagesBeforeId(
     username: string;
     text: string;
     timestamp: number;
+    image: string | null;
+    imageType: string | null;
   }>;
   hasMore: boolean;
 } {
   // Get the requested messages
   const stmt = db.prepare(
-    "SELECT id, username, text, timestamp FROM messages WHERE id < ? ORDER BY id DESC LIMIT ?"
+    "SELECT id, username, text, timestamp, image, imageType FROM messages WHERE id < ? ORDER BY id DESC LIMIT ?"
   );
 
   const messages = stmt.all(beforeId, limit) as Array<{
@@ -84,6 +120,8 @@ export function getMessagesBeforeId(
     username: string;
     text: string;
     timestamp: number;
+    image: string | null;
+    imageType: string | null;
   }>;
 
   // Check if there are more messages before the oldest one we just retrieved

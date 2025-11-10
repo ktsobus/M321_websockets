@@ -44,7 +44,8 @@
                 <div class="message-header-own">
                   <span class="message-timestamp">{{ formatTimestamp(msg.timestamp) }}</span>
                 </div>
-                <div class="message-text">{{ msg.text }}</div>
+                <div v-if="msg.text" class="message-text">{{ msg.text }}</div>
+                <img v-if="msg.image" :src="msg.image" :alt="msg.text || 'Image'" class="message-image" loading="eager" />
               </template>
               <!-- Other messages: username and timestamp -->
               <template v-else>
@@ -52,7 +53,8 @@
                   <span class="message-username">{{ msg.username }}</span>
                   <span class="message-timestamp">{{ formatTimestamp(msg.timestamp) }}</span>
                 </div>
-                <div class="message-text">{{ msg.text }}</div>
+                <div v-if="msg.text" class="message-text">{{ msg.text }}</div>
+                <img v-if="msg.image" :src="msg.image" :alt="msg.text || 'Image'" class="message-image" loading="eager" />
               </template>
             </template>
             <template v-else>
@@ -70,13 +72,24 @@
           </button>
         </div>
 
-        <input
-          v-model="input"
-          @keyup.enter="sendMessage"
-          placeholder="Type a message..."
-          class="input"
-        />
-        <button @click="sendMessage" class="button">Send</button>
+        <div class="message-input-container">
+          <input
+            v-model="input"
+            @keyup.enter="sendMessage"
+            @paste="handlePaste"
+            placeholder="Type a message..."
+            class="input"
+          />
+          <input
+            type="file"
+            ref="fileInput"
+            @change="handleFileSelect"
+            accept="image/jpeg,image/png,image/gif,image/webp"
+            style="display: none"
+          />
+          <button @click="triggerFileInput" class="button-attach-inline" title="Attach image">🖼️</button>
+          <button @click="sendMessage" class="button-send-inline" title="Send message">➤</button>
+        </div>
       </div>
     </div>
 
@@ -123,6 +136,8 @@ interface Message {
   id?: number
   timestamp?: number
   username?: string
+  image?: string
+  imageType?: string
 }
 
 const messages = ref<Message[]>([])
@@ -141,6 +156,9 @@ const oldestMessageId = ref<number | null>(null)
 // Auto-scroll and notification state
 const isScrolledUp = ref(false)
 const newMessageCount = ref(0)
+
+// File upload state
+const fileInput = ref<HTMLInputElement | null>(null)
 
 // Theme management
 const currentThemeName = ref(localStorage.getItem('theme') || defaultTheme)
@@ -256,7 +274,7 @@ function connect() {
 
     if (data.type === 'history') {
       // Load historical messages
-      data.messages.forEach((msg: { id: number; username: string; text: string; timestamp: number }) => {
+      data.messages.forEach((msg: { id: number; username: string; text: string; timestamp: number; image?: string; imageType?: string }) => {
         messages.value.push({
           type: 'message',
           text: msg.text,
@@ -264,6 +282,8 @@ function connect() {
           id: msg.id,
           timestamp: msg.timestamp,
           username: msg.username,
+          image: msg.image || undefined,
+          imageType: msg.imageType || undefined,
         })
       })
 
@@ -282,13 +302,15 @@ function connect() {
       const oldScrollHeight = chatBox?.scrollHeight || 0
 
       // Prepend older messages to the beginning of the array
-      const olderMessages = data.messages.map((msg: { id: number; username: string; text: string; timestamp: number }) => ({
+      const olderMessages = data.messages.map((msg: { id: number; username: string; text: string; timestamp: number; image?: string; imageType?: string }) => ({
         type: 'message' as const,
         text: msg.text,
         isOwn: msg.username === username.value,
         id: msg.id,
         timestamp: msg.timestamp,
         username: msg.username,
+        image: msg.image || undefined,
+        imageType: msg.imageType || undefined,
       }))
 
       messages.value = [...olderMessages, ...messages.value]
@@ -336,6 +358,28 @@ function connect() {
         }, 10)
       } else {
         // User is scrolled up, increment new message counter
+        newMessageCount.value++
+      }
+    } else if (data.type === 'image') {
+      // Real-time image message
+      const wasAtBottom = isAtBottom()
+
+      messages.value.push({
+        type: 'message',
+        text: data.text || '',
+        isOwn: data.username === username.value,
+        timestamp: Date.now(),
+        username: data.username,
+        image: data.image,
+        imageType: data.imageType,
+      })
+
+      // Auto-scroll if we were at bottom, otherwise increment counter
+      if (wasAtBottom) {
+        setTimeout(() => {
+          scrollToBottom(false)
+        }, 10)
+      } else {
         newMessageCount.value++
       }
     }
@@ -410,6 +454,82 @@ const sendMessage = () => {
     }),
   )
   input.value = ''
+}
+
+// Trigger file input click
+function triggerFileInput() {
+  fileInput.value?.click()
+}
+
+// Handle file selection from input
+function handleFileSelect(event: Event) {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  processImageFile(file)
+  // Reset file input
+  target.value = ''
+}
+
+// Handle paste event for images
+function handlePaste(event: ClipboardEvent) {
+  const items = event.clipboardData?.items
+  if (!items) return
+
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      event.preventDefault()
+      const file = item.getAsFile()
+      if (file) {
+        processImageFile(file)
+      }
+      break
+    }
+  }
+}
+
+// Process and send image file
+function processImageFile(file: File) {
+  // Validate file size (5MB limit)
+  const MAX_SIZE = 5 * 1024 * 1024
+  if (file.size > MAX_SIZE) {
+    alert('Image is too large. Maximum size is 5MB.')
+    return
+  }
+
+  // Validate file type
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+  if (!allowedTypes.includes(file.type)) {
+    alert('Invalid image type. Please use JPG, PNG, GIF, or WebP.')
+    return
+  }
+
+  // Read file as base64
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    const base64 = e.target?.result as string
+
+    // Send image message
+    ws.send(
+      JSON.stringify({
+        type: 'image',
+        username: username.value,
+        text: input.value.trim() || '',
+        image: base64,
+        imageType: file.type,
+      }),
+    )
+
+    // Clear input after sending
+    input.value = ''
+  }
+
+  reader.onerror = () => {
+    alert('Failed to read image file.')
+  }
+
+  reader.readAsDataURL(file)
 }
 
 const leaveChat = () => {
@@ -517,15 +637,22 @@ h3 {
   background: var(--color-primary-light);
 }
 
+.message-input-container {
+  position: relative;
+  width: 100%;
+}
+
 .input {
-  width: calc(100% - 90px);
-  padding: 8px;
+  width: 100%;
+  padding: 10px;
+  padding-right: 90px;
   background: var(--color-bg-transparent);
   border: 1px solid var(--color-border-light);
   border-radius: 4px;
   color: var(--color-text-primary);
   font-family: var(--font-body);
   outline: none;
+  box-sizing: border-box;
 }
 
 .input::placeholder {
@@ -534,6 +661,37 @@ h3 {
 
 .input:focus {
   border-color: var(--color-primary);
+}
+
+.button-attach-inline,
+.button-send-inline {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 6px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.button-attach-inline {
+  right: 45px;
+}
+
+.button-send-inline {
+  right: 8px;
+}
+
+.button-attach-inline:hover,
+.button-send-inline:hover {
+  color: var(--color-primary);
+  transform: translateY(-50%) scale(1.1);
 }
 
 .button {
@@ -650,6 +808,14 @@ h3 {
 
 .message-text {
   font-size: 0.95rem;
+}
+
+.message-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin-top: 4px;
+  display: block;
 }
 
 .new-message-button {

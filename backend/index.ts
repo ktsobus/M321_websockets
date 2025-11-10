@@ -48,6 +48,33 @@ wss.on("connection", (ws) => {
           client.send(messageData);
         }
       });
+    } else if (data.type === 'image') {
+      // Validate image size (5MB limit)
+      const MAX_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+      const base64Length = data.image ? data.image.length : 0;
+
+      if (base64Length > MAX_SIZE) {
+        console.log(`Image rejected: too large (${base64Length} bytes)`);
+        return; // Reject oversized images
+      }
+
+      // Validate image type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(data.imageType)) {
+        console.log(`Image rejected: invalid type (${data.imageType})`);
+        return;
+      }
+
+      // Save image message to database
+      saveMessage(data.username, data.text || '', data.image, data.imageType);
+
+      // Broadcast image message to all clients
+      const imageData = JSON.stringify(data);
+      clients.forEach((username, client) => {
+        if (client.readyState === 1) {
+          client.send(imageData);
+        }
+      });
     } else if (data.type === 'load_more') {
       // Handle pagination request
       const beforeId = data.beforeId;
